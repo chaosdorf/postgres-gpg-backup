@@ -1,0 +1,24 @@
+#!/bin/sh
+set -e
+[ -z "${BACKUP_NAME}" ] && { echo "error: BACKUP_NAME not set"; exit 1; }
+[ -z "${BACKUP_GPG_KEY_ID}" ] && { echo "error: BACKUP_GPG_KEY_ID not set"; exit 1; }
+[ -z "${BACKUP_SSH_DESTINATION}" ] && { echo "error: BACKUP_SSH_DESTINATION not set"; exit 1; }
+BACKUP_INTERVAL=${BACKUP_INTERVAL:-1h}
+BACKUP_SSH_REMOTE_DIRECTORY=${BACKUP_SSH_REMOTE_DIRECTORY:-backup}
+
+echo "Retrieving GPG key ${BACKUP_GPG_KEY_ID}"
+gpg --receive-keys "${BACKUP_GPG_KEY_ID}"
+
+echo "Creating postgres SQL dump every ${BACKUP_INTERVAL}..."
+while true
+do
+    DATE=$(date +%y%m%d-%H%M%S)
+    REMOTE_FILE=${BACKUP_SSH_REMOTE_DIRECTORY}/${BACKUP_NAME}_${DATE}.sql.gz.gpg
+    echo "[${DATE}] Creating postgres SQL dump ${REMOTE_FILE}"
+    pg_dumpall \
+        | gzip \
+        | gpg --encrypt --always-trust -r "${BACKUP_GPG_KEY_ID}" \
+        | ssh -q ${BACKUP_SSH_DESTINATION} "cat > ${REMOTE_FILE}"
+    echo "Done, waiting ${BACKUP_INTERVAL}"
+    sleep "${BACKUP_INTERVAL}"
+done
