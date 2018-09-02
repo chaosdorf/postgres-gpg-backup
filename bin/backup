@@ -1,8 +1,10 @@
 #!/bin/sh
-set -e
-[ -z "${BACKUP_NAME}" ] && { echo "error: BACKUP_NAME not set"; exit 1; }
-[ -z "${BACKUP_GPG_KEY_ID}" ] && { echo "error: BACKUP_GPG_KEY_ID not set"; exit 1; }
-[ -z "${BACKUP_SSH_DESTINATION}" ] && { echo "error: BACKUP_SSH_DESTINATION not set"; exit 1; }
+set -e # Exit if a command exists with an error.
+set -o pipefail # If any command in a pipe exits with an error, treat the whole pipe as failed.
+set -u # Fail if a variable is used, but not defined.
+[ -z "${BACKUP_NAME:-}" ] && { echo "error: BACKUP_NAME not set"; exit 1; }
+[ -z "${BACKUP_GPG_KEY_ID:-}" ] && { echo "error: BACKUP_GPG_KEY_ID not set"; exit 1; }
+[ -z "${BACKUP_SSH_DESTINATION:-}" ] && { echo "error: BACKUP_SSH_DESTINATION not set"; exit 1; }
 BACKUP_INTERVAL=${BACKUP_INTERVAL:-1h}
 BACKUP_SSH_REMOTE_DIRECTORY=${BACKUP_SSH_REMOTE_DIRECTORY:-backup}
 
